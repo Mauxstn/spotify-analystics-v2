@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sonar | Top Insights</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="white">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
+                        <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+                    </svg>
+                </div>
+                <span class="logo-text">Sonar</span>
+            </div>
+            <a href="index.html" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+                Back to Home
+            </a>
+        </div>
+
+        <!-- Top Artists Section -->
+        <div id="top-artists-section" class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">Top Artists</h2>
+                <p class="section-subtitle">Your most listened artists</p>
+            </div>
+            <div id="top-artists" class="item-list">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading your top artists...
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Songs Section -->
+        <div id="top-songs-section" class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">Top Songs</h2>
+                <p class="section-subtitle">Your most played songs</p>
+            </div>
+            <div id="top-songs" class="item-list">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading your top songs...
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Genres Section -->
+        <div id="top-genres-section" class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">Top Genres</h2>
+                <p class="section-subtitle">Your favorite genres</p>
+            </div>
+            <div id="top-genres" class="item-list">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading your top genres...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/app.js"></script>
+    <script>
+        const accessToken = localStorage.getItem('spotify_access_token');
+
+        if (!accessToken) {
+            window.location.href = 'index.html'; // Redirect to login if no token
+        }
+
+        async function fetchTopArtists() {
+            const topArtistsDiv = document.getElementById('top-artists');
+            topArtistsDiv.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading your top artists...
+                </div>
+            `;
+
+            try {
+                const res = await fetch('https://api.spotify.com/v1/me/top/artists?limit=30', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+
+                if (!res.ok) throw res;
+
+                const data = await res.json();
+                topArtistsDiv.innerHTML = '';
+                data.items.forEach((artist, index) => {
+                    const artistDiv = document.createElement('div');
+                    artistDiv.className = 'item';
+                    artistDiv.innerHTML = `
+                        <div class="item-rank">${index + 1}</div>
+                        <img src="${artist.images[0]?.url || 'https://via.placeholder.com/56'}" alt="${artist.name}" class="item-img">
+                        <div class="item-info">
+                            <div class="item-title">${artist.name}</div>
+                            <div class="item-subtitle">${artist.genres.join(', ') || 'No genres available'}</div>
+                        </div>
+                    `;
+                    topArtistsDiv.appendChild(artistDiv);
+                });
+            } catch (error) {
+                console.error('Error fetching top artists:', error);
+                topArtistsDiv.innerHTML = '<div class="empty-state">Failed to load top artists</div>';
+            }
+        }
+
+        async function fetchTopTracks() {
+            const topTracksDiv = document.getElementById('top-songs');
+            topTracksDiv.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading your top songs...
+                </div>
+            `;
+
+            try {
+                const res = await fetch('https://api.spotify.com/v1/me/top/tracks?limit=30', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+
+                if (!res.ok) throw res;
+
+                const data = await res.json();
+                topTracksDiv.innerHTML = '';
+                data.items.forEach((track, index) => {
+                    const trackDiv = document.createElement('div');
+                    trackDiv.className = 'item';
+                    trackDiv.innerHTML = `
+                        <div class="item-rank">${index + 1}</div>
+                        <img src="${track.album.images[0]?.url || 'https://via.placeholder.com/56'}" alt="${track.name}" class="item-img">
+                        <div class="item-info">
+                            <div class="item-title">${track.name}</div>
+                            <div class="item-subtitle">${track.artists.map(artist => artist.name).join(', ')}</div>
+                        </div>
+                    `;
+                    topTracksDiv.appendChild(trackDiv);
+                });
+            } catch (error) {
+                console.error('Error fetching top songs:', error);
+                topTracksDiv.innerHTML = '<div class="empty-state">Failed to load top songs</div>';
+            }
+        }
+
+        async function fetchTopGenres() {
+            const topGenresDiv = document.getElementById('top-genres');
+            topGenresDiv.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading your top genres...
+                </div>
+            `;
+
+            try {
+                const res = await fetch('https://api.spotify.com/v1/me/top/artists?limit=50', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+
+                if (!res.ok) throw res;
+
+                const data = await res.json();
+                const genres = {};
+
+                data.items.forEach(artist => {
+                    artist.genres.forEach(genre => {
+                        genres[genre] = (genres[genre] || 0) + 1;
+                    });
+                });
+
+                const sortedGenres = Object.entries(genres)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 30);
+
+                topGenresDiv.innerHTML = '';
+                sortedGenres.forEach(([genre, count], index) => {
+                    const genreDiv = document.createElement('div');
+                    genreDiv.className = 'item';
+                    genreDiv.innerHTML = `
+                        <div class="item-rank">${index + 1}</div>
+                        <div class="item-info">
+                            <div class="item-title">${genre}</div>
+                            <div class="item-subtitle">${count} artists</div>
+                        </div>
+                    `;
+                    topGenresDiv.appendChild(genreDiv);
+                });
+            } catch (error) {
+                console.error('Error fetching top genres:', error);
+                topGenresDiv.innerHTML = '<div class="empty-state">Failed to load top genres</div>';
+            }
+        }
+
+        // Fetch data on page load
+        fetchTopArtists();
+        fetchTopTracks();
+        fetchTopGenres();
+    </script>
+</body>
+</html>

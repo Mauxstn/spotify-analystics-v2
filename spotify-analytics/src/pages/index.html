@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sonar | Immersive Music Analytics</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #3b82f6;
+            --primary-dark: #1d4ed8;
+            --accent: #8b5cf6;
+            --text: #ffffff;
+            --text-light: rgba(255, 255, 255, 0.8);
+            --text-lighter: rgba(255, 255, 255, 0.6);
+            --bg: #0f172a;
+            --border: rgba(255, 255, 255, 0.1);
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Background Animation */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            overflow: hidden;
+        }
+
+        .bg-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+            animation: float 15s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(5%, 5%); }
+            50% { transform: translate(10%, 0); }
+            75% { transform: translate(5%, -5%); }
+        }
+
+        /* Main App Container */
+        .app-container {
+            min-height: 100vh;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+
+        .logo-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        /* Main Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            flex: 1;
+        }
+
+        /* Now Playing */
+        .now-playing {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.2) 0%, transparent 100%);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .now-playing::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, transparent 70%);
+            animation: sonar 6s infinite ease-out;
+            pointer-events: none;
+        }
+
+        @keyframes sonar {
+            0% { transform: scale(0.96); opacity: 0.6; }
+            100% { transform: scale(1.1); opacity: 0; }
+        }
+
+        .now-playing-img {
+            width: 160px;
+            height: 160px;
+            border-radius: 16px;
+            object-fit: cover;
+            z-index: 1;
+            transition: var(--transition);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+        }
+
+        .now-playing-img:hover {
+            transform: scale(1.02);
+        }
+
+        .now-playing-info {
+            z-index: 1;
+            flex: 1;
+        }
+
+        .now-playing-info h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .now-playing-info p {
+            font-size: 1.25rem;
+            color: var(--text-light);
+            margin-bottom: 1.5rem;
+        }
+
+        .now-playing-progress {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .now-playing-progress-bar {
+            height: 100%;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.5s linear;
+        }
+
+        .now-playing-time {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9375rem;
+            color: var(--text-light);
+        }
+
+        .now-playing-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        /* Content Sections */
+        .content-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .section-subtitle {
+            color: var(--text-light);
+            font-size: 0.9375rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Time Range Selector */
+        .time-range {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .time-btn {
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-light);
+            transition: var(--transition);
+        }
+
+        .time-btn.active {
+            background: rgba(59, 130, 246, 0.2);
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Items List */
+        .item-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .item {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            padding: 1rem;
+            border-radius: 12px;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, transparent 100%);
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: scale(1.01);
+        }
+
+        .item:hover::before {
+            opacity: 1;
+        }
+
+        .item-rank {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            color: var(--primary);
+            width: 28px;
+            text-align: center;
+            font-size: 1.125rem;
+            flex-shrink: 0;
+        }
+
+        .item-img {
+            width: 56px;
+            height: 56px;
+            border-radius: 10px;
+            object-fit: cover;
+            flex-shrink: 0;
+            transition: var(--transition);
+        }
+
+        .item:hover .item-img {
+            transform: scale(1.05);
+        }
+
+        .artist-img {
+            border-radius: 50%;
+        }
+
+        .item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .item-title {
+            font-size: 1.0625rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .item-subtitle {
+            font-size: 0.9375rem;
+            color: var(--text-light);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Audio Features */
+        .audio-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .feature {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .feature-name {
+            font-size: 0.875rem;
+            color: var(--text-light);
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .feature-progress {
+            height: 100%;
+            border-radius: 2px;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+        }
+
+        /* Mood Graph */
+        .mood-graph {
+            height: 300px;
+            width: 100%;
+            position: relative;
+            margin-top: 1.5rem;
+        }
+
+        .mood-axis {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .mood-line {
+            position: absolute;
+            width: 100%;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .mood-labels {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+
+        .mood-path {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            fill: none;
+            stroke: var(--primary);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .mood-point {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--primary);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+            transition: var(--transition);
+        }
+
+        .mood-point:hover {
+            transform: translate(-50%, -50%) scale(1.5);
+            background: white;
+            box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.5);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.875rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            font-size: 0.9375rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: white;
+            border: 1px solid var(--border);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary-light);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-icon {
+            padding: 0.75rem;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: var(--transition);
+            border: none;
+        }
+
+        .btn-icon:hover {
+            transform: translateY(-2px) scale(1.05);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-spotify {
+            background: #ffffff;
+            color: rgb(16, 101, 230);
+        }
+
+        .btn-spotify:hover {
+            background: #fefeff;
+            transform: translateY(-2px);
+        }
+
+        /* Login Section */
+        .login-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .login-content {
+            max-width: 600px;
+            padding: 3rem;
+        }
+
+        .login-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.1;
+        }
+
+        .login-description {
+            color: var(--text-light);
+            font-size: 1.25rem;
+            margin-bottom: 3rem;
+            line-height: 1.6;
+        }
+
+        .login-features {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin: 2.5rem 0;
+            text-align: left;
+        }
+
+        .login-feature {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .login-feature i {
+            color: var(--primary);
+            font-size: 1.25rem;
+            margin-top: 2px;
+        }
+
+        .login-feature-text {
+            font-size: 0.9375rem;
+            color: var(--text-light);
+        }
+
+        /* Loading States */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            color: var(--text-light);
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .spinner {
+            width: 2.5rem;
+            height: 2.5rem;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+            font-size: 1.0625rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .content-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .now-playing {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .now-playing-actions {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                padding: 1.5rem;
+            }
+            
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .login-content {
+                padding: 2rem 1.5rem;
+            }
+            
+            .login-features {
+                grid-template-columns: 1fr;
+            }
+            
+            .login-title {
+                font-size: 2.5rem;
+            }
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8125rem;
+            font-weight: normal;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Pulse animation */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        /* Floating elements */
+        @keyframes float-up {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0); }
+        }
+
+        .float {
+            animation: float-up 6s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Animation -->
+    <div class="bg-animation">
+        <div class="bg-circle" style="width: 300px; height: 300px; top: 10%; left: 5%; animation-delay: 0s;"></div>
+        <div class="bg-circle" style="width: 500px; height: 500px; top: 60%; left: 70%; animation-delay: 2s;"></div>
+        <div class="bg-circle" style="width: 200px; height: 200px; top: 30%; left: 80%; animation-delay: 4s;"></div>
+        <div class="bg-circle" style="width: 400px; height: 400px; top: 70%; left: 20%; animation-delay: 6s;"></div>
+    </div>
+
+    <div id="app">
+        <!-- Login Section -->
+        <div id="login-section" class="login-section">
+            <div class="login-content">
+                <div class="logo" style="justify-content: center; margin-bottom: 2.5rem;">
+                    <div class="logo-icon pulse">
+                        <svg viewBox="0 0 24 24" fill="white">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
+                            <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+                        </svg>
+                    </div>
+                    <span class="logo-text">Sonar</span>
+                </div>
+                <h1 class="login-title">Immersive Music Analytics</h1>
+                <p class="login-description">Experience your Spotify data like never before with stunning visualizations and deep insights</p>
+                
+                <div class="login-features">
+                    <div class="login-feature">
+                        <i class="fas fa-chart-network"></i>
+                        <span class="login-feature-text">Interactive data visualizations</span>
+                    </div>
+                    <div class="login-feature">
+                        <i class="fas fa-heart-circle-bolt"></i>
+                        <span class="login-feature-text">Real-time listening analytics</span>
+                    </div>
+                    <div class="login-feature">
+                        <i class="fas fa-waveform"></i>
+                        <span class="login-feature-text">Audio feature breakdowns</span>
+                    </div>
+                    <div class="login-feature">
+                        <i class="fas fa-calendar-star"></i>
+                        <span class="login-feature-text">Historical trends & patterns</span>
+                    </div>
+                </div>
+                
+                <button id="login-btn" class="btn btn-spotify" style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-weight: 600;">
+                    <i class="fab fa-spotify"></i>
+                    Connect with Spotify
+                </button>
+
+        <!-- Main App (hidden until login) -->
+        <div id="stats-section" style="display: none;">
+            <div class="app-container">
+                <!-- Header -->
+                <div class="header">
+                    <div class="logo">
+                        <div class="logo-icon">
+                            <svg viewBox="0 0 24 24" fill="white">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
+                                <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+                            </svg>
+                        </div>
+                        <span class="logo-text">Sonar</span>
+                    </div>
+                    <div>
+                        <button id="logout-btn" class="btn btn-outline">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Sign Out
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Now Playing -->
+                <div id="now-playing" class="now-playing" style="display: none;">
+                    <img id="now-playing-img" class="now-playing-img float" src="" alt="Album Cover">
+                    <div class="now-playing-info">
+                        <h3 id="now-playing-title">Loading...</h3>
+                        <p id="now-playing-artist"></p>
+                        <div class="now-playing-progress">
+                            <div id="now-playing-progress-bar" class="now-playing-progress-bar"></div>
+                        </div>
+                        <div class="now-playing-time">
+                            <span id="now-playing-current-time">0:00</span>
+                            <span id="now-playing-duration">0:00</span>
+                        </div>
+                        <div class="now-playing-actions">
+                            <button class="btn-icon" id="prev-btn">
+                                <i class="fas fa-step-backward"></i>
+                            </button>
+                            <button class="btn-icon" id="play-btn">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="btn-icon" id="next-btn">
+                                <i class="fas fa-step-forward"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Grid -->
+                <div class="content-grid">
+                    <!-- Top Artists -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <div>
+                                <h2 class="section-title">Top Artists</h2>
+                                <p class="section-subtitle">Your most listened artists this period</p>
+                            </div>
+                            <div class="time-range">
+                                <button data-range="short_term" class="time-btn">4W</button>
+                                <button data-range="medium_term" class="time-btn active">6M</button>
+                                <button data-range="long_term" class="time-btn">All</button>
+                            </div>
+                        </div>
+                        <div id="top-artists" class="item-list">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                Scanning your music taste...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top Tracks -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <div>
+                                <h2 class="section-title">Top Tracks</h2>
+                                <p class="section-subtitle">Your most played songs this period</p>
+                            </div>
+                            <div class="time-range">
+                                <button data-range="short_term" class="time-btn">4W</button>
+                                <button data-range="medium_term" class="time-btn active">6M</button>
+                                <button data-range="long_term" class="time-btn">All</button>
+                            </div>
+                        </div>
+                        <div id="top-tracks" class="item-list">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                Analyzing your listening patterns...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Audio Features -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <div>
+                                <h2 class="section-title">Audio DNA</h2>
+                                <p class="section-subtitle">Characteristics of your top tracks</p>
+                            </div>
+                            <div class="tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">Technical audio features from Spotify's analysis</span>
+                            </div>
+                        </div>
+                        <div id="audio-features" class="audio-features">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                Decoding your audio preferences...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mood Graph -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <div>
+                                <h2 class="section-title">Mood Map</h2>
+                                <p class="section-subtitle">Energy vs. valence of your top tracks</p>
+                            </div>
+                            <div class="tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">Valence represents musical positiveness (happy vs. sad), Energy measures intensity</span>
+                            </div>
+                        </div>
+                        <div id="mood-graph" class="mood-graph">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                Mapping your musical mood...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Spotify API Configuration
+        const clientId = '0dc72c6d704a4ed6a04eee09782dc1eb'; // Updated client ID
+        const redirectUri = 'https://spotify-analystics.vercel.app/top-insights.html'; // Redirect to top-insights.html
+
+        const loginBtn = document.getElementById('login-btn');
+
+        loginBtn.addEventListener('click', () => {
+            const scope = 'user-top-read user-read-currently-playing user-read-playback-state user-modify-playback-state';
+            const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
+            window.location.href = authUrl;
+        });
+    </script>
+</body>
+</html>
